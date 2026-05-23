@@ -1,228 +1,297 @@
 import { useState, useEffect } from "react";
 
-const CATEGORIES = ["runs", "hits", "catches", "rbis", "homeruns"];
-const CAT_LABELS = { runs: "Runs", hits: "Hits", catches: "Catches", rbis: "RBIs", homeruns: "HRs" };
-const CAT_ICONS = { runs: "🏃", hits: "🥎", catches: "🧤", rbis: "💥", homeruns: "💣" };
+// ── Constants ──────────────────────────────────────────────────────────────
+const GIRLS = ["Brooke", "Molly O", "Molly K", "Laurel", "Katie", "Taylor"];
+const BOYS = ["Tristan", "Evan", "Sean", "Dan", "Kyle", "Yasser", "Victor", "Moose"];
+
+const CATEGORIES = ["runs", "hits", "atbats", "catches", "rbis", "homeruns"];
+const CAT_LABELS = { runs: "Runs", hits: "Hits", atbats: "At Bats", catches: "Catches", rbis: "RBIs", homeruns: "HRs" };
+const CAT_ICONS = { runs: "🏃", hits: "🥎", atbats: "⚾", catches: "🧤", rbis: "💥", homeruns: "💣" };
+
+const COLORS = {
+  bg: "#F7F5F2",
+  card: "#FFFFFF",
+  text: "#111111",
+  textSoft: "#5F6368",
+  accent: "#C8A46A",
+  border: "#E7E2DA",
+  hover: "#F1EEE8",
+  success: "#2E7D32",
+  dark: "#1E1E1E",
+};
 
 const DEFAULT_PLAYERS = [
-  { id: 1, name: "Tristan", runs: 4, hits: 7, catches: 3, rbis: 5, homeruns: 1 },
-  { id: 2, name: "Jake", runs: 6, hits: 5, catches: 2, rbis: 4, homeruns: 2 },
-  { id: 3, name: "Marcus", runs: 3, hits: 8, catches: 5, rbis: 6, homeruns: 0 },
-  { id: 4, name: "Devon", runs: 5, hits: 4, catches: 4, rbis: 3, homeruns: 1 },
-  { id: 5, name: "Sam", runs: 7, hits: 6, catches: 1, rbis: 7, homeruns: 3 },
-  { id: 6, name: "Chris", runs: 2, hits: 3, catches: 6, rbis: 2, homeruns: 0 },
+  { id: 1,  name: "Tristan", gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 2,  name: "Evan",    gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 3,  name: "Sean",    gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 4,  name: "Brooke",  gender: "female", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 5,  name: "Molly O", gender: "female", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 6,  name: "Molly K", gender: "female", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 7,  name: "Laurel",  gender: "female", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 8,  name: "Dan",     gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 9,  name: "Katie",   gender: "female", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 10, name: "Moose",   gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 11, name: "Taylor",  gender: "female", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 12, name: "Kyle",    gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 13, name: "Yasser",  gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
+  { id: 14, name: "Victor",  gender: "male",   runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0, hotStreak: false, gamesPlayed: 0 },
 ];
 
+const DEFAULT_AWARDS = {
+  crazyCatch: "",
+  wildcard: "",
+  mvpWeek: "",
+  attendance: "",
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function getBattingAvg(p) {
+  if (!p.atbats || p.atbats === 0) return null;
+  return (p.hits / p.atbats).toFixed(3).replace(/^0/, "");
+}
+
 function getLineupScore(p) {
-  return p.hits * 3 + p.homeruns * 5 + p.rbis * 2 + p.runs * 1;
+  const avg = p.atbats > 0 ? p.hits / p.atbats : 0;
+  return avg * 5 + p.homeruns * 4 + p.rbis * 2 + p.runs * 1;
+}
+
+function isGirl(name) {
+  return GIRLS.includes(name);
+}
+
+function PlayerBadge({ name, size = "sm" }) {
+  const girl = isGirl(name);
+  const sz = size === "lg" ? { width: 36, height: 36, fontSize: "0.85rem" } : { width: 28, height: 28, fontSize: "0.72rem" };
+  return (
+    <div style={{
+      ...sz,
+      borderRadius: "50%",
+      background: girl ? "#FFFFFF" : "#111111",
+      border: `2px solid ${girl ? "#E7E2DA" : "#111111"}`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontWeight: 700,
+      color: girl ? "#111111" : "#FFFFFF",
+      flexShrink: 0,
+      fontFamily: "inherit",
+    }}>
+      {name.charAt(0)}
+    </div>
+  );
 }
 
 function Medal({ rank }) {
-  if (rank === 1) return <span style={{ fontSize: "1.2rem" }}>🥇</span>;
-  if (rank === 2) return <span style={{ fontSize: "1.2rem" }}>🥈</span>;
-  if (rank === 3) return <span style={{ fontSize: "1.2rem" }}>🥉</span>;
-  return <span style={{ color: "#8b7355", fontWeight: 700, fontSize: "0.9rem" }}>#{rank}</span>;
+  if (rank === 1) return <span style={{ fontSize: "1.1rem" }}>🥇</span>;
+  if (rank === 2) return <span style={{ fontSize: "1.1rem" }}>🥈</span>;
+  if (rank === 3) return <span style={{ fontSize: "1.1rem" }}>🥉</span>;
+  return <span style={{ color: COLORS.textSoft, fontWeight: 600, fontSize: "0.85rem" }}>#{rank}</span>;
 }
 
+// ── Main App ───────────────────────────────────────────────────────────────
 export default function SoftballApp() {
   const [players, setPlayers] = useState(() => {
-    try {
-      const saved = localStorage.getItem("softball_players");
-      return saved ? JSON.parse(saved) : DEFAULT_PLAYERS;
-    } catch { return DEFAULT_PLAYERS; }
+    try { const s = localStorage.getItem("bs_players"); return s ? JSON.parse(s) : DEFAULT_PLAYERS; } catch { return DEFAULT_PLAYERS; }
   });
-
-  // availability is a Set of player IDs who are IN for this game (persisted separately)
+  const [awards, setAwards] = useState(() => {
+    try { const s = localStorage.getItem("bs_awards"); return s ? JSON.parse(s) : DEFAULT_AWARDS; } catch { return DEFAULT_AWARDS; }
+  });
   const [available, setAvailable] = useState(() => {
-    try {
-      const saved = localStorage.getItem("softball_available");
-      if (saved) return new Set(JSON.parse(saved));
-    } catch {}
+    try { const s = localStorage.getItem("bs_available"); if (s) return new Set(JSON.parse(s)); } catch {}
     return new Set(DEFAULT_PLAYERS.map(p => p.id));
   });
-
   const [tab, setTab] = useState("leaderboard");
   const [sortCat, setSortCat] = useState("runs");
+  const [lbFilter, setLbFilter] = useState("all"); // all | male | female
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
-  const [newPlayer, setNewPlayer] = useState({ name: "", runs: 0, hits: 0, catches: 0, rbis: 0, homeruns: 0 });
+  const [newPlayer, setNewPlayer] = useState({ name: "", gender: "male", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0 });
   const [showAdd, setShowAdd] = useState(false);
-  const [lineupNote, setLineupNote] = useState(() => {
-    try { return localStorage.getItem("softball_note") || ""; } catch { return ""; }
+  const [lineupNote, setLineupNote] = useState(() => { try { return localStorage.getItem("bs_note") || ""; } catch { return ""; } });
+  const [editingAwards, setEditingAwards] = useState(false);
+  const [awardsForm, setAwardsForm] = useState({ ...DEFAULT_AWARDS });
+
+  useEffect(() => { try { localStorage.setItem("bs_players", JSON.stringify(players)); } catch {} }, [players]);
+  useEffect(() => { try { localStorage.setItem("bs_awards", JSON.stringify(awards)); } catch {} }, [awards]);
+  useEffect(() => { try { localStorage.setItem("bs_available", JSON.stringify([...available])); } catch {} }, [available]);
+  useEffect(() => { try { localStorage.setItem("bs_note", lineupNote); } catch {} }, [lineupNote]);
+
+  // Filtered & sorted players for leaderboard
+  const filteredPlayers = players.filter(p => {
+    if (lbFilter === "male") return p.gender === "male";
+    if (lbFilter === "female") return p.gender === "female";
+    return true;
+  });
+  const sorted = [...filteredPlayers].sort((a, b) => {
+    if (sortCat === "avg") {
+      const aAvg = a.atbats > 0 ? a.hits / a.atbats : 0;
+      const bAvg = b.atbats > 0 ? b.hits / b.atbats : 0;
+      return bAvg - aAvg;
+    }
+    return b[sortCat] - a[sortCat];
   });
 
-  useEffect(() => {
-    try { localStorage.setItem("softball_players", JSON.stringify(players)); } catch {}
-  }, [players]);
-
-  useEffect(() => {
-    try { localStorage.setItem("softball_available", JSON.stringify([...available])); } catch {}
-  }, [available]);
-
-  useEffect(() => {
-    try { localStorage.setItem("softball_note", lineupNote); } catch {}
-  }, [lineupNote]);
-
-  // When a new player is added, default them to available
-  function addPlayer() {
-    if (!newPlayer.name.trim()) return;
-    const id = Date.now();
-    setPlayers(ps => [...ps, { ...newPlayer, id }]);
-    setAvailable(prev => new Set([...prev, id]));
-    setNewPlayer({ name: "", runs: 0, hits: 0, catches: 0, rbis: 0, homeruns: 0 });
-    setShowAdd(false);
+  // Lineup logic: balance M/F, weight by score
+  const availPlayers = players.filter(p => available.has(p.id));
+  const males = [...availPlayers].filter(p => p.gender === "male").sort((a, b) => getLineupScore(b) - getLineupScore(a));
+  const females = [...availPlayers].filter(p => p.gender === "female").sort((a, b) => getLineupScore(b) - getLineupScore(a));
+  const lineup = [];
+  const maxLen = Math.max(males.length, females.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (males[i]) lineup.push(males[i]);
+    if (females[i]) lineup.push(females[i]);
   }
+  const sidelined = players.filter(p => !available.has(p.id));
 
   function toggleAvailable(id) {
-    setAvailable(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    setAvailable(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
-
   function setAllAvailable(val) {
     setAvailable(val ? new Set(players.map(p => p.id)) : new Set());
   }
-
-  const sorted = [...players].sort((a, b) => b[sortCat] - a[sortCat]);
-  const lineup = [...players]
-    .filter(p => available.has(p.id))
-    .sort((a, b) => getLineupScore(b) - getLineupScore(a));
-  const sidelined = [...players].filter(p => !available.has(p.id));
-
-  function startEdit(player) {
-    setEditingId(player.id);
-    setEditData({ ...player });
+  function startEdit(player) { setEditingId(player.id); setEditData({ ...player }); }
+  function saveEdit() { setPlayers(ps => ps.map(p => p.id === editingId ? { ...editData, id: p.id } : p)); setEditingId(null); }
+  function deletePlayer(id) { setPlayers(ps => ps.filter(p => p.id !== id)); setAvailable(prev => { const n = new Set(prev); n.delete(id); return n; }); }
+  function addPlayer() {
+    if (!newPlayer.name.trim()) return;
+    const id = Date.now();
+    setPlayers(ps => [...ps, { ...newPlayer, id, hotStreak: false, gamesPlayed: 0 }]);
+    setAvailable(prev => new Set([...prev, id]));
+    setNewPlayer({ name: "", gender: "male", runs: 0, hits: 0, atbats: 0, catches: 0, rbis: 0, homeruns: 0 });
+    setShowAdd(false);
   }
-
-  function saveEdit() {
-    setPlayers(ps => ps.map(p => p.id === editingId ? { ...editData, id: p.id } : p));
-    setEditingId(null);
-  }
-
-  function deletePlayer(id) {
-    setPlayers(ps => ps.filter(p => p.id !== id));
-    setAvailable(prev => { const n = new Set(prev); n.delete(id); return n; });
-  }
-
-  function resetAll() {
-    if (window.confirm("Reset to sample data?")) {
-      setPlayers(DEFAULT_PLAYERS);
-      setAvailable(new Set(DEFAULT_PLAYERS.map(p => p.id)));
-    }
-  }
+  function saveAwards() { setAwards({ ...awardsForm }); setEditingAwards(false); }
 
   const topPlayer = sorted[0];
-  const availCount = available.size;
-  const totalCount = players.length;
+  const maleRunsLeader = [...players].filter(p => p.gender === "male").sort((a, b) => b.runs - a.runs)[0];
+  const femaleRunsLeader = [...players].filter(p => p.gender === "female").sort((a, b) => b.runs - a.runs)[0];
+  const attendanceLeader = [...players].sort((a, b) => (b.gamesPlayed || 0) - (a.gamesPlayed || 0))[0];
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-      fontFamily: "'Georgia', serif",
-      color: "#f0e6d3",
-      padding: "0 0 60px 0",
-    }}>
-      {/* Header */}
-      <div style={{
-        background: "linear-gradient(90deg, #c8a96e 0%, #e8d5a3 50%, #c8a96e 100%)",
-        padding: "28px 24px 20px",
-        textAlign: "center",
-        position: "relative",
-        overflow: "hidden",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
-      }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px)" }} />
-        <div style={{ position: "relative" }}>
-          <div style={{ fontSize: "2.4rem", marginBottom: "4px" }}>🥎</div>
-          <h1 style={{ margin: 0, fontSize: "clamp(1.6rem, 5vw, 2.4rem)", fontWeight: 900, color: "#1a1a2e", letterSpacing: "0.05em", textTransform: "uppercase", textShadow: "0 1px 0 rgba(255,255,255,0.3)" }}>
-            Rec League Stats
-          </h1>
-          <p style={{ margin: "4px 0 0", color: "#3d2b0e", fontSize: "0.85rem", letterSpacing: "0.1em" }}>SEASON LEADERBOARD</p>
-        </div>
+    <div style={{ minHeight: "100vh", background: COLORS.bg, fontFamily: '"Inter", "SF Pro Display", "Helvetica Neue", sans-serif', color: COLORS.text }}>
+
+      {/* ── HEADER ── */}
+      <div style={{ background: COLORS.card, borderBottom: `1px solid ${COLORS.border}`, padding: "24px 24px 20px", textAlign: "center" }}>
+        <div style={{ fontSize: "1.5rem", marginBottom: "6px" }}>🥎</div>
+        <h1 style={{ margin: 0, fontSize: "clamp(1.4rem, 5vw, 2rem)", fontWeight: 700, color: COLORS.text, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+          Buchanan Softball
+        </h1>
+        <p style={{ margin: "4px 0 0", color: COLORS.textSoft, fontSize: "0.82rem", letterSpacing: "0.04em" }}>Season Stats</p>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", background: "rgba(0,0,0,0.3)", borderBottom: "1px solid rgba(200,169,110,0.2)" }}>
-        {["leaderboard", "lineup", "roster"].map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            flex: 1, padding: "14px 8px", border: "none", cursor: "pointer",
-            fontFamily: "inherit", fontSize: "0.8rem", letterSpacing: "0.12em",
-            textTransform: "uppercase", fontWeight: 700, transition: "all 0.2s",
-            background: tab === t ? "rgba(200,169,110,0.15)" : "transparent",
-            color: tab === t ? "#c8a96e" : "#8b7a6b",
-            borderBottom: tab === t ? "2px solid #c8a96e" : "2px solid transparent",
+      {/* ── TABS ── */}
+      <div style={{ background: COLORS.card, borderBottom: `1px solid ${COLORS.border}`, display: "flex" }}>
+        {[
+          { key: "leaderboard", label: "Leaderboard" },
+          { key: "lineup", label: "Lineup" },
+          { key: "awards", label: "Awards" },
+          { key: "roster", label: "Roster" },
+        ].map(t => (
+          <button key={t.key} onClick={() => setTab(t.key)} style={{
+            flex: 1, padding: "14px 4px", border: "none", cursor: "pointer",
+            fontFamily: "inherit", fontSize: "0.75rem", fontWeight: tab === t.key ? 600 : 400,
+            background: "transparent",
+            color: tab === t.key ? COLORS.text : COLORS.textSoft,
+            borderBottom: tab === t.key ? `2px solid ${COLORS.text}` : "2px solid transparent",
+            transition: "all 0.2s ease",
           }}>
-            {t === "leaderboard" ? "🏆 Board" : t === "lineup" ? "📋 Lineup" : "👥 Roster"}
+            {t.label}
           </button>
         ))}
       </div>
 
-      <div style={{ maxWidth: 560, margin: "0 auto", padding: "24px 16px 0" }}>
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "32px 16px 60px" }}>
 
         {/* ── LEADERBOARD ── */}
         {tab === "leaderboard" && (
           <div>
+            {/* Hero card */}
             {topPlayer && (
-              <div style={{
-                background: "linear-gradient(135deg, rgba(200,169,110,0.15), rgba(200,169,110,0.05))",
-                border: "1px solid rgba(200,169,110,0.4)", borderRadius: "16px",
-                padding: "20px", marginBottom: "24px", textAlign: "center", position: "relative", overflow: "hidden",
-              }}>
-                <div style={{ position: "absolute", top: -20, right: -20, fontSize: "8rem", opacity: 0.05, lineHeight: 1 }}>🥇</div>
-                <div style={{ fontSize: "0.7rem", letterSpacing: "0.2em", color: "#c8a96e", marginBottom: "6px", textTransform: "uppercase" }}>
-                  Leading in {CAT_LABELS[sortCat]}
+              <div style={{ background: COLORS.dark, borderRadius: 20, padding: "28px 24px", marginBottom: 24, position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", top: -30, right: -20, fontSize: "8rem", opacity: 0.06, lineHeight: 1 }}>🥎</div>
+                <div style={{ fontSize: "0.72rem", letterSpacing: "0.12em", color: COLORS.accent, marginBottom: 8, textTransform: "uppercase", fontWeight: 600 }}>
+                  Leading in {sortCat === "avg" ? "Batting Avg" : CAT_LABELS[sortCat]}
                 </div>
-                <div style={{ fontSize: "2rem", fontWeight: 900, color: "#f0e6d3" }}>{topPlayer.name}</div>
-                <div style={{ fontSize: "3rem", fontWeight: 900, color: "#c8a96e", lineHeight: 1.1 }}>{topPlayer[sortCat]}</div>
-                <div style={{ fontSize: "0.75rem", color: "#8b7a6b", marginTop: "4px" }}>{CAT_ICONS[sortCat]} {CAT_LABELS[sortCat]} this season</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <PlayerBadge name={topPlayer.name} size="lg" />
+                  <div>
+                    <div style={{ fontSize: "1.6rem", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+                      {topPlayer.name} {topPlayer.hotStreak && "🔥"}
+                    </div>
+                    <div style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+                      {topPlayer.gamesPlayed || 0} games played
+                    </div>
+                  </div>
+                  <div style={{ marginLeft: "auto", textAlign: "right" }}>
+                    <div style={{ fontSize: "2.8rem", fontWeight: 700, color: COLORS.accent, lineHeight: 1, letterSpacing: "-0.03em" }}>
+                      {sortCat === "avg" ? (getBattingAvg(topPlayer) || ".000") : topPlayer[sortCat]}
+                    </div>
+                    <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 2 }}>
+                      {sortCat === "avg" ? "AVG" : CAT_LABELS[sortCat]}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
-            <div style={{ marginBottom: "16px" }}>
-              <div style={{ fontSize: "0.7rem", letterSpacing: "0.15em", color: "#8b7a6b", marginBottom: "8px", textTransform: "uppercase" }}>Sort by stat</div>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => setSortCat(cat)} style={{
-                    padding: "6px 14px", borderRadius: "20px", border: "1px solid",
-                    borderColor: sortCat === cat ? "#c8a96e" : "rgba(200,169,110,0.2)",
-                    background: sortCat === cat ? "rgba(200,169,110,0.2)" : "transparent",
-                    color: sortCat === cat ? "#c8a96e" : "#8b7a6b",
-                    fontSize: "0.78rem", cursor: "pointer", fontFamily: "inherit",
-                    fontWeight: sortCat === cat ? 700 : 400, transition: "all 0.15s",
-                  }}>
-                    {CAT_ICONS[cat]} {CAT_LABELS[cat]}
-                  </button>
+            {/* Filters row */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, padding: 3, gap: 2 }}>
+                {[["all", "All"], ["male", "Boys"], ["female", "Girls"]].map(([v, l]) => (
+                  <button key={v} onClick={() => setLbFilter(v)} style={{
+                    padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer",
+                    fontFamily: "inherit", fontSize: "0.75rem", fontWeight: 600,
+                    background: lbFilter === v ? COLORS.dark : "transparent",
+                    color: lbFilter === v ? "#FFFFFF" : COLORS.textSoft,
+                    transition: "all 0.2s",
+                  }}>{l}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {sorted.map((player, i) => (
-                <div key={player.id} style={{
-                  display: "flex", alignItems: "center", gap: "12px",
-                  padding: "14px 16px", borderRadius: "12px",
-                  background: i === 0 ? "linear-gradient(90deg, rgba(200,169,110,0.2), rgba(200,169,110,0.05))" : "rgba(255,255,255,0.04)",
-                  border: i === 0 ? "1px solid rgba(200,169,110,0.3)" : "1px solid rgba(255,255,255,0.06)",
+            {/* Stat pills */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
+              {[...CATEGORIES, "avg"].map(cat => (
+                <button key={cat} onClick={() => setSortCat(cat)} style={{
+                  padding: "6px 14px", borderRadius: 20,
+                  border: `1px solid ${sortCat === cat ? COLORS.text : COLORS.border}`,
+                  background: sortCat === cat ? COLORS.text : COLORS.card,
+                  color: sortCat === cat ? "#FFFFFF" : COLORS.textSoft,
+                  fontSize: "0.75rem", cursor: "pointer", fontFamily: "inherit",
+                  fontWeight: 500, transition: "all 0.2s",
                 }}>
-                  <div style={{ width: 32, textAlign: "center" }}><Medal rank={i + 1} /></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: "1rem", color: i === 0 ? "#f0e6d3" : "#c4b49a" }}>{player.name}</div>
-                    <div style={{ display: "flex", gap: "10px", marginTop: "4px", flexWrap: "wrap" }}>
-                      {CATEGORIES.map(cat => (
-                        <span key={cat} style={{ fontSize: "0.7rem", color: cat === sortCat ? "#c8a96e" : "#6b5d4f", fontWeight: cat === sortCat ? 700 : 400 }}>
-                          {CAT_ICONS[cat]}{player[cat]}
-                        </span>
-                      ))}
+                  {cat === "avg" ? "⚡ AVG" : `${CAT_ICONS[cat]} ${CAT_LABELS[cat]}`}
+                </button>
+              ))}
+            </div>
+
+            {/* Player rows */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {sorted.map((player, i) => {
+                const avg = getBattingAvg(player);
+                const val = sortCat === "avg" ? (avg || ".000") : player[sortCat];
+                return (
+                  <div key={player.id} style={{
+                    display: "flex", alignItems: "center", gap: 14,
+                    padding: "16px 18px", borderRadius: 16,
+                    background: COLORS.card,
+                    border: `1px solid ${i === 0 ? COLORS.accent : COLORS.border}`,
+                    transition: "all 0.2s",
+                  }}>
+                    <div style={{ width: 28, textAlign: "center", flexShrink: 0 }}><Medal rank={i + 1} /></div>
+                    <PlayerBadge name={player.name} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: "1.05rem", color: COLORS.text, display: "flex", alignItems: "center", gap: 6 }}>
+                        {player.name} {player.hotStreak && <span title="Hot streak">🔥</span>}
+                      </div>
+                      <div style={{ fontSize: "0.72rem", color: COLORS.textSoft, marginTop: 3 }}>
+                        {avg ? `${avg} AVG · ` : ""}{player.hits}H · {player.runs}R · {player.rbis} RBI
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "1.5rem", fontWeight: 700, color: i === 0 ? COLORS.accent : COLORS.text, letterSpacing: "-0.02em" }}>
+                      {val}
                     </div>
                   </div>
-                  <div style={{ fontSize: "1.8rem", fontWeight: 900, color: i === 0 ? "#c8a96e" : "#6b5d4f", minWidth: 40, textAlign: "right" }}>
-                    {player[sortCat]}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -230,138 +299,104 @@ export default function SoftballApp() {
         {/* ── LINEUP ── */}
         {tab === "lineup" && (
           <div>
-            {/* Game note */}
             <input
-              placeholder="Game note (e.g. vs Thundercats · May 21)..."
+              placeholder="Game note (e.g. vs Riverside · June 4)..."
               value={lineupNote}
               onChange={e => setLineupNote(e.target.value)}
-              style={{ ...inputStyle, marginBottom: "16px" }}
+              style={{ ...inputStyle, marginBottom: 20 }}
             />
 
-            {/* Availability section */}
-            <div style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(200,169,110,0.15)",
-              borderRadius: "14px",
-              padding: "16px",
-              marginBottom: "20px",
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            {/* Availability */}
+            <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20, marginBottom: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <div>
-                  <div style={{ fontSize: "0.75rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#c8a96e", fontWeight: 700 }}>
-                    Who's playing?
-                  </div>
-                  <div style={{ fontSize: "0.72rem", color: "#6b5d4f", marginTop: "2px" }}>
-                    {availCount} of {totalCount} available
-                  </div>
+                  <div style={{ fontWeight: 600, fontSize: "0.95rem", color: COLORS.text }}>Who's playing?</div>
+                  <div style={{ fontSize: "0.75rem", color: COLORS.textSoft, marginTop: 2 }}>{available.size} of {players.length} available</div>
                 </div>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <button onClick={() => setAllAvailable(true)} style={{ ...smallBtn, borderColor: "rgba(100,200,100,0.3)", color: "#7db87d" }}>All In</button>
-                  <button onClick={() => setAllAvailable(false)} style={{ ...smallBtn, borderColor: "rgba(200,100,100,0.3)", color: "#b87d7d" }}>All Out</button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => setAllAvailable(true)} style={{ ...pillBtn, background: "#E8F5E9", color: COLORS.success, border: "none" }}>All In</button>
+                  <button onClick={() => setAllAvailable(false)} style={{ ...pillBtn, background: "#FEEBEE", color: "#C0392B", border: "none" }}>All Out</button>
                 </div>
               </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {players.map(player => {
                   const isIn = available.has(player.id);
                   return (
                     <div key={player.id} onClick={() => toggleAvailable(player.id)} style={{
-                      display: "flex", alignItems: "center", gap: "12px",
-                      padding: "10px 14px", borderRadius: "10px", cursor: "pointer",
-                      background: isIn ? "rgba(100,180,100,0.08)" : "rgba(255,255,255,0.02)",
-                      border: `1px solid ${isIn ? "rgba(100,180,100,0.25)" : "rgba(255,255,255,0.05)"}`,
-                      transition: "all 0.15s",
-                      userSelect: "none",
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "10px 14px", borderRadius: 12, cursor: "pointer",
+                      background: isIn ? "#F0FAF0" : COLORS.bg,
+                      border: `1px solid ${isIn ? "#C8E6C9" : COLORS.border}`,
+                      transition: "all 0.15s", userSelect: "none",
                     }}>
-                      {/* Toggle pill */}
                       <div style={{
-                        width: 36, height: 20, borderRadius: 10, position: "relative", flexShrink: 0,
-                        background: isIn ? "#4caf50" : "rgba(255,255,255,0.1)",
+                        width: 34, height: 20, borderRadius: 10, position: "relative", flexShrink: 0,
+                        background: isIn ? COLORS.success : COLORS.border,
                         transition: "background 0.2s",
                       }}>
                         <div style={{
-                          position: "absolute", top: 3, left: isIn ? 19 : 3,
+                          position: "absolute", top: 3, left: isIn ? 17 : 3,
                           width: 14, height: 14, borderRadius: "50%",
-                          background: isIn ? "#fff" : "rgba(255,255,255,0.4)",
+                          background: "#FFFFFF",
                           transition: "left 0.2s",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
                         }} />
                       </div>
-                      <div style={{ flex: 1, fontWeight: 600, fontSize: "0.92rem", color: isIn ? "#d4f0d4" : "#6b5d4f" }}>
-                        {player.name}
-                      </div>
-                      <div style={{ fontSize: "0.7rem", color: isIn ? "#4caf50" : "#6b5d4f", fontWeight: 700, letterSpacing: "0.08em" }}>
-                        {isIn ? "IN" : "OUT"}
-                      </div>
+                      <PlayerBadge name={player.name} />
+                      <div style={{ flex: 1, fontWeight: 500, fontSize: "0.9rem", color: isIn ? COLORS.text : COLORS.textSoft }}>{player.name}</div>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 600, color: isIn ? COLORS.success : COLORS.textSoft }}>{isIn ? "IN" : "OUT"}</div>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Generated Lineup */}
+            {/* Generated lineup */}
             {lineup.length > 0 ? (
               <div>
-                <div style={{ fontSize: "0.7rem", letterSpacing: "0.15em", color: "#8b7a6b", marginBottom: "10px", textTransform: "uppercase" }}>
+                {lineupNote && (
+                  <div style={{ textAlign: "center", color: COLORS.textSoft, fontSize: "0.82rem", marginBottom: 14 }}>📋 {lineupNote}</div>
+                )}
+                <div style={{ fontSize: "0.72rem", letterSpacing: "0.1em", color: COLORS.textSoft, marginBottom: 10, textTransform: "uppercase", fontWeight: 600 }}>
                   Batting Order · {lineup.length} players
                 </div>
-                {lineupNote && (
-                  <div style={{ textAlign: "center", color: "#c8a96e", fontSize: "0.82rem", marginBottom: "12px", letterSpacing: "0.04em" }}>
-                    📋 {lineupNote}
-                  </div>
-                )}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {lineup.map((player, i) => {
-                    const score = getLineupScore(player);
-                    const maxScore = getLineupScore(lineup[0]);
-                    const pct = maxScore > 0 ? (score / maxScore) * 100 : 0;
+                    const avg = getBattingAvg(player);
                     return (
                       <div key={player.id} style={{
-                        display: "flex", alignItems: "center", gap: "14px",
-                        padding: "14px 16px", borderRadius: "12px",
-                        background: "rgba(255,255,255,0.04)",
-                        border: i === 0 ? "1px solid rgba(200,169,110,0.25)" : "1px solid rgba(255,255,255,0.06)",
-                        position: "relative", overflow: "hidden",
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "14px 18px", borderRadius: 16,
+                        background: COLORS.card,
+                        border: `1px solid ${COLORS.border}`,
                       }}>
-                        <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: "rgba(200,169,110,0.06)", transition: "width 0.5s ease" }} />
                         <div style={{
-                          position: "relative", width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                          background: i === 0 ? "#c8a96e" : "rgba(200,169,110,0.15)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: "0.75rem", fontWeight: 900,
-                          color: i === 0 ? "#1a1a2e" : "#c8a96e",
-                        }}>
-                          {i + 1}
-                        </div>
-                        <div style={{ flex: 1, position: "relative" }}>
-                          <div style={{ fontWeight: 700, fontSize: "1rem", color: "#f0e6d3" }}>{player.name}</div>
-                          <div style={{ fontSize: "0.72rem", color: "#6b5d4f", marginTop: "2px" }}>
-                            {player.hits} H · {player.homeruns} HR · {player.rbis} RBI · {player.runs} R
+                          width: 26, flexShrink: 0,
+                          fontSize: "0.85rem", fontWeight: 700,
+                          color: COLORS.textSoft,
+                          textAlign: "center",
+                        }}>{i + 1}.</div>
+                        <PlayerBadge name={player.name} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: "1.05rem", color: COLORS.text }}>{player.name} {player.hotStreak && "🔥"}</div>
+                          <div style={{ fontSize: "0.72rem", color: COLORS.textSoft, marginTop: 2 }}>
+                            {avg ? `${avg} AVG · ` : ""}{player.hits}H · {player.runs}R
                           </div>
                         </div>
-                        <div style={{ position: "relative", textAlign: "right" }}>
-                          <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#c8a96e" }}>{score}</div>
-                          <div style={{ fontSize: "0.65rem", color: "#6b5d4f", letterSpacing: "0.1em" }}>SCORE</div>
+                        <div style={{ fontSize: "0.7rem", fontWeight: 600, color: player.gender === "female" ? "#5B4F8A" : COLORS.textSoft, background: player.gender === "female" ? "#F0EEF8" : COLORS.bg, padding: "3px 10px", borderRadius: 20 }}>
+                          {player.gender === "female" ? "F" : "M"}
                         </div>
                       </div>
                     );
                   })}
                 </div>
-
-                {/* Sidelined */}
                 {sidelined.length > 0 && (
-                  <div style={{ marginTop: "20px" }}>
-                    <div style={{ fontSize: "0.7rem", letterSpacing: "0.15em", color: "#6b5d4f", marginBottom: "8px", textTransform: "uppercase" }}>
-                      Sitting out ({sidelined.length})
-                    </div>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <div style={{ marginTop: 20 }}>
+                    <div style={{ fontSize: "0.72rem", color: COLORS.textSoft, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>Sitting out</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {sidelined.map(p => (
-                        <div key={p.id} style={{
-                          padding: "5px 12px", borderRadius: "20px",
-                          background: "rgba(255,255,255,0.03)",
-                          border: "1px solid rgba(255,255,255,0.07)",
-                          fontSize: "0.8rem", color: "#6b5d4f",
-                        }}>
+                        <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, background: COLORS.card, border: `1px solid ${COLORS.border}`, fontSize: "0.8rem", color: COLORS.textSoft }}>
+                          <PlayerBadge name={p.name} size="xs" />
                           {p.name}
                         </div>
                       ))}
@@ -370,126 +405,261 @@ export default function SoftballApp() {
                 )}
               </div>
             ) : (
-              <div style={{
-                textAlign: "center", padding: "40px 20px",
-                color: "#6b5d4f", fontSize: "0.9rem",
-              }}>
-                <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>😬</div>
-                No one's available for this game!<br />
-                <span style={{ fontSize: "0.8rem" }}>Toggle some players in above.</span>
+              <div style={{ textAlign: "center", padding: "48px 20px", color: COLORS.textSoft }}>
+                <div style={{ fontSize: "2rem", marginBottom: 12 }}>😬</div>
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>No one's available</div>
+                <div style={{ fontSize: "0.82rem" }}>Toggle some players in above.</div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── AWARDS ── */}
+        {tab === "awards" && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "1.2rem", letterSpacing: "-0.02em" }}>Season Awards</div>
+                <div style={{ fontSize: "0.8rem", color: COLORS.textSoft, marginTop: 2 }}>Live season standings</div>
+              </div>
+              {!editingAwards ? (
+                <button onClick={() => { setAwardsForm({ ...awards }); setEditingAwards(true); }} style={{ ...pillBtn, background: COLORS.dark, color: "#FFFFFF", border: "none" }}>Edit</button>
+              ) : (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={saveAwards} style={{ ...pillBtn, background: COLORS.dark, color: "#FFFFFF", border: "none" }}>Save</button>
+                  <button onClick={() => setEditingAwards(false)} style={{ ...pillBtn, background: COLORS.bg, color: COLORS.text, border: `1px solid ${COLORS.border}` }}>Cancel</button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+              {/* Auto: Most Runs Male */}
+              <AwardCard
+                icon="🏃"
+                label="Most Runs — Boys"
+                winner={maleRunsLeader?.name}
+                value={maleRunsLeader ? `${maleRunsLeader.runs} runs` : "—"}
+                auto
+              />
+
+              {/* Auto: Most Runs Female */}
+              <AwardCard
+                icon="🏃"
+                label="Most Runs — Girls"
+                winner={femaleRunsLeader?.name}
+                value={femaleRunsLeader ? `${femaleRunsLeader.runs} runs` : "—"}
+                auto
+              />
+
+              {/* Auto: Best Attendance */}
+              <AwardCard
+                icon="📅"
+                label="Best Attendance"
+                winner={attendanceLeader?.name}
+                value={attendanceLeader ? `${attendanceLeader.gamesPlayed || 0} games` : "—"}
+                auto
+              />
+
+              {/* Manual: Craziest Catch */}
+              <AwardCard
+                icon="🧤"
+                label="Craziest Catch"
+                winner={awards.crazyCatch || "—"}
+                editing={editingAwards}
+                editValue={awardsForm.crazyCatch}
+                onEdit={v => setAwardsForm(f => ({ ...f, crazyCatch: v }))}
+              />
+
+              {/* Manual: MVP of the Week */}
+              <AwardCard
+                icon="⭐"
+                label="MVP of the Week"
+                winner={awards.mvpWeek || "—"}
+                editing={editingAwards}
+                editValue={awardsForm.mvpWeek}
+                onEdit={v => setAwardsForm(f => ({ ...f, mvpWeek: v }))}
+              />
+
+              {/* Manual: Mid Season Wild Card */}
+              <AwardCard
+                icon="🃏"
+                label="Mid Season Wild Card"
+                winner={awards.wildcard || "—"}
+                editing={editingAwards}
+                editValue={awardsForm.wildcard}
+                onEdit={v => setAwardsForm(f => ({ ...f, wildcard: v }))}
+              />
+
+            </div>
           </div>
         )}
 
         {/* ── ROSTER ── */}
         {tab === "roster" && (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <div style={{ fontSize: "0.75rem", color: "#8b7a6b", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                {players.length} Players
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "1.2rem", letterSpacing: "-0.02em" }}>Roster</div>
+                <div style={{ fontSize: "0.8rem", color: COLORS.textSoft, marginTop: 2 }}>{players.length} players</div>
               </div>
-              <button onClick={() => setShowAdd(!showAdd)} style={{
-                padding: "8px 16px", borderRadius: "8px",
-                border: "1px solid #c8a96e", background: "rgba(200,169,110,0.1)",
-                color: "#c8a96e", fontSize: "0.8rem", cursor: "pointer",
-                fontFamily: "inherit", fontWeight: 700,
-              }}>
-                {showAdd ? "✕ Cancel" : "+ Add Player"}
+              <button onClick={() => setShowAdd(!showAdd)} style={{ ...pillBtn, background: COLORS.dark, color: "#FFFFFF", border: "none" }}>
+                {showAdd ? "Cancel" : "+ Add"}
               </button>
             </div>
 
             {showAdd && (
-              <div style={{ background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.3)", borderRadius: "12px", padding: "16px", marginBottom: "16px" }}>
-                <div style={{ fontSize: "0.75rem", color: "#c8a96e", marginBottom: "10px", letterSpacing: "0.1em", textTransform: "uppercase" }}>New Player</div>
-                <input placeholder="Name" value={newPlayer.name} onChange={e => setNewPlayer(p => ({ ...p, name: e.target.value }))} style={inputStyle} />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginTop: "8px" }}>
+              <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20, marginBottom: 20 }}>
+                <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 14 }}>New Player</div>
+                <input placeholder="Name" value={newPlayer.name} onChange={e => setNewPlayer(p => ({ ...p, name: e.target.value }))} style={{ ...inputStyle, marginBottom: 10 }} />
+                <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                  {["male", "female"].map(g => (
+                    <button key={g} onClick={() => setNewPlayer(p => ({ ...p, gender: g }))} style={{
+                      flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${newPlayer.gender === g ? COLORS.text : COLORS.border}`,
+                      background: newPlayer.gender === g ? COLORS.text : COLORS.card,
+                      color: newPlayer.gender === g ? "#FFFFFF" : COLORS.textSoft,
+                      fontFamily: "inherit", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
+                    }}>{g === "male" ? "Male (Black)" : "Female (White)"}</button>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
                   {CATEGORIES.map(cat => (
                     <div key={cat}>
-                      <div style={{ fontSize: "0.65rem", color: "#8b7a6b", marginBottom: "3px" }}>{CAT_ICONS[cat]} {CAT_LABELS[cat]}</div>
-                      <input type="number" min="0" value={newPlayer[cat]} onChange={e => setNewPlayer(p => ({ ...p, [cat]: Number(e.target.value) }))} style={{ ...inputStyle, padding: "6px 10px" }} />
+                      <div style={{ fontSize: "0.65rem", color: COLORS.textSoft, marginBottom: 4 }}>{CAT_LABELS[cat]}</div>
+                      <input type="number" min="0" value={newPlayer[cat]} onChange={e => setNewPlayer(p => ({ ...p, [cat]: Number(e.target.value) }))} style={{ ...inputStyle, padding: "7px 10px" }} />
                     </div>
                   ))}
                 </div>
-                <button onClick={addPlayer} style={{ marginTop: "12px", width: "100%", padding: "10px", borderRadius: "8px", border: "none", background: "#c8a96e", color: "#1a1a2e", fontWeight: 900, fontSize: "0.85rem", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.05em" }}>
-                  ADD TO ROSTER
+                <button onClick={addPlayer} style={{ width: "100%", padding: "12px", borderRadius: 12, border: "none", background: COLORS.dark, color: "#FFFFFF", fontWeight: 600, fontSize: "0.9rem", cursor: "pointer", fontFamily: "inherit" }}>
+                  Add to Roster
                 </button>
               </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {players.map(player => (
-                <div key={player.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "14px 16px" }}>
+                <div key={player.id} style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: "16px 18px" }}>
                   {editingId === player.id ? (
                     <div>
-                      <input value={editData.name} onChange={e => setEditData(d => ({ ...d, name: e.target.value }))} style={{ ...inputStyle, marginBottom: "8px", fontWeight: 700 }} />
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-                        {CATEGORIES.map(cat => (
-                          <div key={cat}>
-                            <div style={{ fontSize: "0.65rem", color: "#8b7a6b", marginBottom: "3px" }}>{CAT_ICONS[cat]} {CAT_LABELS[cat]}</div>
-                            <input type="number" min="0" value={editData[cat]} onChange={e => setEditData(d => ({ ...d, [cat]: Number(e.target.value) }))} style={{ ...inputStyle, padding: "6px 10px" }} />
-                          </div>
+                      <input value={editData.name} onChange={e => setEditData(d => ({ ...d, name: e.target.value }))} style={{ ...inputStyle, marginBottom: 10, fontWeight: 600 }} />
+                      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                        {["male", "female"].map(g => (
+                          <button key={g} onClick={() => setEditData(d => ({ ...d, gender: g }))} style={{
+                            flex: 1, padding: "7px", borderRadius: 10, border: `1px solid ${editData.gender === g ? COLORS.text : COLORS.border}`,
+                            background: editData.gender === g ? COLORS.text : COLORS.card,
+                            color: editData.gender === g ? "#FFFFFF" : COLORS.textSoft,
+                            fontFamily: "inherit", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer",
+                          }}>{g === "male" ? "Male" : "Female"}</button>
                         ))}
                       </div>
-                      <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
-                        <button onClick={saveEdit} style={{ ...btnStyle, background: "#c8a96e", color: "#1a1a2e", flex: 1 }}>Save</button>
-                        <button onClick={() => setEditingId(null)} style={{ ...btnStyle, flex: 1 }}>Cancel</button>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                        {CATEGORIES.map(cat => (
+                          <div key={cat}>
+                            <div style={{ fontSize: "0.65rem", color: COLORS.textSoft, marginBottom: 4 }}>{CAT_LABELS[cat]}</div>
+                            <input type="number" min="0" value={editData[cat]} onChange={e => setEditData(d => ({ ...d, [cat]: Number(e.target.value) }))} style={{ ...inputStyle, padding: "7px 10px" }} />
+                          </div>
+                        ))}
+                        <div>
+                          <div style={{ fontSize: "0.65rem", color: COLORS.textSoft, marginBottom: 4 }}>Games Played</div>
+                          <input type="number" min="0" value={editData.gamesPlayed || 0} onChange={e => setEditData(d => ({ ...d, gamesPlayed: Number(e.target.value) }))} style={{ ...inputStyle, padding: "7px 10px" }} />
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                        <button onClick={() => setEditData(d => ({ ...d, hotStreak: !d.hotStreak }))} style={{
+                          flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${editData.hotStreak ? "#FF6B35" : COLORS.border}`,
+                          background: editData.hotStreak ? "#FFF0EB" : COLORS.card,
+                          color: editData.hotStreak ? "#FF6B35" : COLORS.textSoft,
+                          fontFamily: "inherit", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer",
+                        }}>🔥 Hot Streak {editData.hotStreak ? "ON" : "OFF"}</button>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={saveEdit} style={{ flex: 1, padding: "10px", borderRadius: 10, border: "none", background: COLORS.dark, color: "#FFFFFF", fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }}>Save</button>
+                        <button onClick={() => setEditingId(null)} style={{ flex: 1, padding: "10px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: COLORS.card, color: COLORS.text, fontWeight: 600, fontFamily: "inherit", cursor: "pointer" }}>Cancel</button>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                        <div style={{ fontWeight: 700, fontSize: "1rem", color: "#f0e6d3" }}>{player.name}</div>
-                        <div style={{ display: "flex", gap: "6px" }}>
-                          <button onClick={() => startEdit(player)} style={iconBtn}>✏️</button>
-                          <button onClick={() => deletePlayer(player.id)} style={iconBtn}>🗑️</button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                        <PlayerBadge name={player.name} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: "0.95rem", color: COLORS.text }}>{player.name} {player.hotStreak && "🔥"}</div>
+                          <div style={{ fontSize: "0.72rem", color: COLORS.textSoft, marginTop: 1 }}>
+                            {player.gender === "female" ? "Female" : "Male"} · {player.gamesPlayed || 0} games
+                          </div>
                         </div>
+                        <button onClick={() => startEdit(player)} style={iconBtnStyle}>✏️</button>
+                        <button onClick={() => deletePlayer(player.id)} style={iconBtnStyle}>🗑️</button>
                       </div>
-                      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                         {CATEGORIES.map(cat => (
                           <div key={cat} style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: "0.65rem", color: "#6b5d4f" }}>{CAT_ICONS[cat]}</div>
-                            <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#c8a96e" }}>{player[cat]}</div>
-                            <div style={{ fontSize: "0.6rem", color: "#6b5d4f", letterSpacing: "0.05em" }}>{CAT_LABELS[cat]}</div>
+                            <div style={{ fontSize: "1rem", fontWeight: 700, color: COLORS.text }}>{player[cat]}</div>
+                            <div style={{ fontSize: "0.62rem", color: COLORS.textSoft }}>{CAT_LABELS[cat]}</div>
                           </div>
                         ))}
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: "1rem", fontWeight: 700, color: COLORS.accent }}>{getBattingAvg(player) || "—"}</div>
+                          <div style={{ fontSize: "0.62rem", color: COLORS.textSoft }}>AVG</div>
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
               ))}
             </div>
-
-            <button onClick={resetAll} style={{ marginTop: "20px", width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,100,100,0.2)", background: "rgba(255,100,100,0.05)", color: "rgba(255,120,120,0.6)", fontSize: "0.75rem", cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.05em" }}>
-              Reset to Sample Data
-            </button>
           </div>
         )}
+
       </div>
     </div>
   );
 }
 
+// ── Award Card Component ───────────────────────────────────────────────────
+function AwardCard({ icon, label, winner, value, auto, editing, editValue, onEdit }) {
+  return (
+    <div style={{ background: "#FFFFFF", border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
+      <div style={{ fontSize: "1.6rem", flexShrink: 0 }}>{icon}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: "0.72rem", color: COLORS.textSoft, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 4 }}>{label}</div>
+        {editing && !auto ? (
+          <input
+            value={editValue}
+            onChange={e => onEdit(e.target.value)}
+            placeholder="Enter name..."
+            style={{ ...inputStyle, padding: "7px 12px", fontSize: "0.9rem" }}
+          />
+        ) : (
+          <div style={{ fontWeight: 700, fontSize: "1.05rem", color: COLORS.text, letterSpacing: "-0.01em" }}>
+            {winner || "—"}
+          </div>
+        )}
+      </div>
+      {value && !editing && (
+        <div style={{ fontSize: "0.8rem", fontWeight: 600, color: COLORS.accent, background: "#FDF8F0", padding: "4px 12px", borderRadius: 20 }}>{value}</div>
+      )}
+      {auto && (
+        <div style={{ fontSize: "0.65rem", color: COLORS.textSoft, background: COLORS.bg, padding: "3px 8px", borderRadius: 10, flexShrink: 0 }}>Auto</div>
+      )}
+    </div>
+  );
+}
+
+// ── Styles ─────────────────────────────────────────────────────────────────
 const inputStyle = {
-  width: "100%", padding: "9px 12px", borderRadius: "8px",
-  border: "1px solid rgba(200,169,110,0.2)", background: "rgba(0,0,0,0.3)",
-  color: "#f0e6d3", fontFamily: "inherit", fontSize: "0.9rem",
-  boxSizing: "border-box", outline: "none",
+  width: "100%", padding: "10px 14px", borderRadius: 10,
+  border: `1px solid ${COLORS.border}`, background: COLORS.bg,
+  color: COLORS.text, fontFamily: '"Inter", "SF Pro Display", "Helvetica Neue", sans-serif',
+  fontSize: "0.9rem", boxSizing: "border-box", outline: "none",
 };
 
-const btnStyle = {
-  padding: "8px 14px", borderRadius: "8px",
-  border: "1px solid rgba(200,169,110,0.3)", background: "transparent",
-  color: "#c8a96e", fontSize: "0.8rem", cursor: "pointer", fontFamily: "inherit",
+const pillBtn = {
+  padding: "7px 16px", borderRadius: 20, cursor: "pointer",
+  fontFamily: '"Inter", "SF Pro Display", "Helvetica Neue", sans-serif',
+  fontSize: "0.78rem", fontWeight: 600,
 };
 
-const smallBtn = {
-  padding: "5px 10px", borderRadius: "6px", border: "1px solid",
-  background: "transparent", fontSize: "0.72rem", cursor: "pointer",
-  fontFamily: "inherit", fontWeight: 700,
-};
-
-const iconBtn = {
+const iconBtnStyle = {
   background: "none", border: "none", cursor: "pointer",
-  fontSize: "0.9rem", padding: "2px 4px", opacity: 0.6,
+  fontSize: "0.9rem", padding: "4px 6px", opacity: 0.5,
 };
